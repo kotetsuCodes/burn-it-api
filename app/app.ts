@@ -5,7 +5,8 @@ const app = express()
 const port = 3000
 
 import { User } from './models/User'
-import Auth from './lib/Auth'
+import { Auth } from './lib/Auth'
+import { AuthorizedRequest } from './lib/Auth'
 import { database } from './database'
 
 require('dotenv').config()
@@ -52,27 +53,34 @@ app.post('/signin', async (req, res) => {
 
 })
 
-app.post('/createUser', (req, res) => {
-  const authHeader: string = req.header("Authorization")
+app.post('/gymVisits/', (req, res) => {
+  const authorization: AuthorizedRequest = Auth.authorizeRequest(req)
 
-  if (typeof (authHeader) === 'undefined') {
-    res.status(401).json({
-      failed: 'No Authorization header was present'
+  if (authorization.success === false) {
+    res.status(401).json({ failed: authorization.error })
+  } else {
+    res.status(500).json({ failed: 'gymVisit creation is not yet available' })
+  }
+})
+
+app.post('/createUser', (req, res) => {
+  const authorization: AuthorizedRequest = Auth.authorizeRequest(req)
+
+  if (authorization.success === false) {
+    res.status(401).json({ failed: authorization.error })
+  }
+  else {
+    Auth.hashPassword(req.body.password, 12, (err, hash) => {
+      if (err) {
+        throw err
+      }
+      else {
+        res.status(403).json({
+          failed: 'User creation is disabled'
+        })
+      }
     })
   }
-
-  const decodedJwt = Auth.verifyJwt(authHeader)
-
-  Auth.hashPassword(req.body.password, 12, (err, hash) => {
-    if (err) {
-      throw err
-    }
-    else {
-      res.status(403).json({
-        failed: 'User creation is disabled'
-      })
-    }
-  })
 })
 
 app.listen(port, () => {

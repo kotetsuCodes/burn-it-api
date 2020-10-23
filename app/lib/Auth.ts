@@ -2,7 +2,29 @@ import * as bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 require('dotenv').config()
 
-export default class Auth {
+export class AuthorizedRequest {
+  success: boolean
+  error: string
+
+  constructor(success: boolean, error: string) {
+    this.success = success
+    this.error = error
+  }
+}
+
+export class Auth {
+  public static authorizeRequest(req: any): AuthorizedRequest {
+
+    try {
+      const authHeader: string = req.header("Authorization")
+      const decodedJwt = Auth.verifyJwt(authHeader)
+
+      return new AuthorizedRequest(true, '')
+    } catch (error) {
+      return new AuthorizedRequest(false, error)
+    }
+  }
+
   public static hashPassword(password: string, rounds: number, callback: (error: Error, hash: string) => void): void {
     bcrypt.hash(password, rounds, (error, hash) => {
       callback(error, hash)
